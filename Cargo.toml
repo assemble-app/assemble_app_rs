@@ -3,6 +3,8 @@ name = "assemble_app"
 version = "0.1.0"
 authors = ["Kyle <me@khanson.io>"]
 edition = "2018"
+description = "Bootstrap library for https://assemble.app"
+license = "Apache-2.0"
 
 [dependencies]
 wapc-guest = "0.4.0"
