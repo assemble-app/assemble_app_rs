@@ -26,6 +26,15 @@ macro_rules! register_view {
             },
         );
         crate::prelude::register_function(
+            &["view-msg-", stringify!($n)].join("")[..],
+            |b: &[u8]| {
+                let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
+                let mut s: $t = crate::deserialize(state)?;
+                s.message(name, name, payload)?;
+                serialize(&s)
+            },
+        );
+        crate::prelude::register_function(
             &["view-render-", stringify!($n)].join("")[..],
             |b: &[u8]| {
                 let s: $t = crate::deserialize(b)?;
@@ -66,7 +75,12 @@ pub trait View: Sync + Send {
     fn start(params: HashMap<String, String>) -> Result<Self>
     where
         Self: Sized;
-    fn event(&mut self, msg: &str, body: &[u8]) -> Result<()>;
+    fn event(&mut self, msg: &str, body: &[u8]) -> Result<()> {
+        Ok(())
+    }
+    fn message(&mut self, msg: &str, body: &[u8]) -> Result<()> {
+        Ok(())
+    }
     fn render(&self) -> Result<Html>;
 }
 
@@ -113,4 +127,77 @@ where
             Err(v) => Err(Box::new(v)),
         }
     }
+}
+
+pub fn kv_get(b: &str, k: &str) -> Result<Option<HashMap<String, String>>> {
+    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn kv_get_raw(b: &str, k: &[u8]) -> Result<Option<HashMap<Vec<u8>, Vec<u8>>>> {
+    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn kv_get_obj<T>(b: &str, k: &str) -> Result<Option<T>>
+where
+    T: DeserializeOwned,
+{
+    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn kv_set(b: &str, k: &str, v: HashMap<String, String>) -> Result<()> {
+    host_call("v1", "kv", "PATCH", &serialize(&(b, k, v))?[..])?;
+    Ok(())
+}
+
+pub fn kv_set_raw(b: &str, k: &[u8], v: HashMap<Vec<u8>, Vec<u8>>) -> Result<()> {
+    host_call("v1", "kv", "PATCH", &serialize(&(b, k, v))?[..])?;
+    Ok(())
+}
+
+pub fn kv_set_obj<T>(b: &str, k: &str, obj: T) -> Result<()>
+where
+    T: Serialize,
+{
+    host_call("v1", "kv", "PATCH", &serialize(&(b, k, obj))?[..])?;
+    Ok(())
+}
+
+pub fn kv_delete(b: &str, k: &str) -> Result<()> {
+    host_call("v1", "kv", "DELETE", &serialize(&(b, k))?[..])?;
+    Ok(())
+}
+
+pub fn kv_delete_raw(b: &str, k: &[u8]) -> Result<()> {
+    host_call("v1", "kv", "DELETE", &serialize(&(b, k))?[..])?;
+    Ok(())
+}
+
+pub fn kv_delete_keys(b: &str, k: &str, v: Vec<String>) -> Result<()> {
+    host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?[..])?;
+    Ok(())
+}
+
+pub fn kv_delete_keys_raw(b: &str, k: &[u8], v: &[&[u8]]) -> Result<()> {
+    host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?[..])?;
+    Ok(())
+}
+
+pub fn pubsub_subscribe(k: &str) -> Result<()> {
+    let res = host_call("v1", "pubsub", "SUB", &serialize(k)?[..])?;
+    deserialize(&res[..])
+}
+pub fn pubsub_unsubscribe(k: &str) -> Result<()> {
+    let res = host_call("v1", "pubsub", "UNSUB", &serialize(&(k,))?[..])?;
+    deserialize(&res[..])
+}
+pub fn pubsub_publish(k: &str, event: &str, v: &str) -> Result<()> {
+    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
+    deserialize(&res[..])
+}
+pub fn pubsub_publish_from(k: &str, event: &str, v: &str) -> Result<()> {
+    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
+    deserialize(&res[..])
 }
