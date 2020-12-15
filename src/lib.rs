@@ -28,7 +28,7 @@ macro_rules! register_view {
         crate::prelude::register_function(
             &["view-msg-", stringify!($n)].join("")[..],
             |b: &[u8]| {
-                let (state, topic, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
+                let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) = crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
                 s.message(topic, name, payload)?;
                 serialize(&s)
