@@ -28,9 +28,9 @@ macro_rules! register_view {
         crate::prelude::register_function(
             &["view-msg-", stringify!($n)].join("")[..],
             |b: &[u8]| {
-                let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
+                let (state, topic, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
-                s.message(name, payload)?;
+                s.message(topic, name, payload)?;
                 serialize(&s)
             },
         );
@@ -78,7 +78,7 @@ pub trait View: Sync + Send {
     fn event(&mut self, msg: &str, body: &[u8]) -> Result<()> {
         Ok(())
     }
-    fn message(&mut self, msg: &str, body: &[u8]) -> Result<()> {
+    fn message(&mut self, topic: &str, msg: &str, body: &[u8]) -> Result<()> {
         Ok(())
     }
     fn render(&self) -> Result<Html>;
@@ -189,15 +189,44 @@ pub fn pubsub_subscribe(k: &str) -> Result<()> {
     let res = host_call("v1", "pubsub", "SUB", &serialize(k)?[..])?;
     deserialize(&res[..])
 }
+
 pub fn pubsub_unsubscribe(k: &str) -> Result<()> {
     let res = host_call("v1", "pubsub", "UNSUB", &serialize(&(k,))?[..])?;
     deserialize(&res[..])
 }
+
 pub fn pubsub_publish(k: &str, event: &str, v: &str) -> Result<()> {
     let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
     deserialize(&res[..])
 }
+
+pub fn pubsub_publish_raw(k: &str, event: &str, v: &[u8]) -> Result<()> {
+    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn pubsub_publish_obj<T>(k: &str, event: &str, v: T) -> Result<()>
+where
+    T: Serialize,
+{
+    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
+    deserialize(&res[..])
+}
+
 pub fn pubsub_publish_from(k: &str, event: &str, v: &str) -> Result<()> {
+    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn pubsub_publish_from_raw(k: &str, event: &str, v: &[u8]) -> Result<()> {
+    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn pubsub_publish_from_obj<T>(k: &str, event: &str, v: &[u8]) -> Result<()>
+where
+    T: Serialize,
+{
     let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
     deserialize(&res[..])
 }
