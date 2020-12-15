@@ -30,7 +30,7 @@ macro_rules! register_view {
             |b: &[u8]| {
                 let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
-                s.message(name, name, payload)?;
+                s.message(name, payload)?;
                 serialize(&s)
             },
         );
