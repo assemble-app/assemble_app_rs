@@ -88,7 +88,7 @@ pub fn serialize<T: ?Sized>(val: &T) -> Result<Vec<u8>>
 where
     T: Serialize,
 {
-    match rmp_serde::to_vec(val) {
+    match rmp_serde::to_vec_named(val) {
         Ok(v) => Ok(v),
         Err(v) => Err(Box::new(v)),
     }
@@ -223,7 +223,7 @@ pub fn pubsub_publish_from_raw(k: &str, event: &str, v: &[u8]) -> Result<()> {
     deserialize(&res[..])
 }
 
-pub fn pubsub_publish_from_obj<T>(k: &str, event: &str, v: &[u8]) -> Result<()>
+pub fn pubsub_publish_from_obj<T>(k: &str, event: &str, v: T) -> Result<()>
 where
     T: Serialize,
 {
