@@ -1,5 +1,7 @@
+#[macro_use]
 use serde;
 use serde::de::DeserializeOwned;
+#[macro_use]
 pub use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 pub use wapc_guest::prelude;
@@ -139,7 +141,15 @@ where
     deserialize(&res[..])
 }
 
-pub fn kv_set<T>(b: &str, k: &str, obj: T) -> Result<()>
+pub fn kv_set<T>(b: &str, k: &str, obj: &T) -> Result<()>
+where
+    T: Serialize,
+{
+    host_call("v1", "kv", "SET", &serialize(&(b, k, obj))?[..])?;
+    Ok(())
+}
+
+pub fn kv_patch<T>(b: &str, k: &str, obj: &T) -> Result<()>
 where
     T: Serialize,
 {
@@ -169,27 +179,27 @@ pub fn pubsub_unsubscribe(k: &str) -> Result<()> {
     deserialize(&res[..])
 }
 
-pub fn pubsub_publish<T>(k: &str, event: &str, v: T) -> Result<()>
+pub fn pubsub_publish<T>(k: &str, event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
+    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, serialize(v)?))?[..])?;
     deserialize(&res[..])
 }
 
-pub fn pubsub_publish_from<T>(k: &str, event: &str, v: T) -> Result<()>
+pub fn pubsub_publish_from<T>(k: &str, event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
+    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, serialize(v)?))?[..])?;
     deserialize(&res[..])
 }
 
-pub fn presence_track<T>(topic: &str, key: &str, v: T) -> Result<()>
+pub fn presence_track<T>(topic: &str, key: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, v))?[..])?;
+    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, serialize(v)?))?[..])?;
     deserialize(&res[..])
 }
 
@@ -198,6 +208,6 @@ where
     T: DeserializeOwned
 {
     let res = host_call("v1", "presence", "LIST", &serialize(&(topic,))?[..])?;
-    deserialize(&res[..])
+    deserialize::<_, Vec<&[u8]>>(&res)?.into_iter().map(|x| { deserialize(&x[..]) }).collect()
 }
 
