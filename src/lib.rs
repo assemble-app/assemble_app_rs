@@ -63,6 +63,7 @@ macro_rules! assemble_init {
     };
 }
 
+
 pub fn hook(info: &std::panic::PanicInfo) {
     let msg = info.to_string();
     wapc_guest::prelude::console_log(&msg[..]);
@@ -107,20 +108,20 @@ where
 
 pub fn run_function<T, R>(
     b: &[u8],
-    f: fn(&Option<T>) -> std::result::Result<Box<R>, Box<dyn std::error::Error + Sync + Send>>,
+    f: fn(Option<T>) -> std::result::Result<Box<R>, Box<dyn std::error::Error + Sync + Send>>,
 ) -> wapc_guest::prelude::CallResult
 where
     T: DeserializeOwned,
     R: Serialize + ?Sized,
 {
     if b.len() == 0 {
-        match rmp_serde::to_vec(&f(&None)?) {
+        match rmp_serde::to_vec(&f(None)?) {
             Ok(v) => Ok(v),
             Err(v) => Err(Box::new(v)),
         }
     } else {
         match rmp_serde::from_read_ref(&b) {
-            Ok(input) => match rmp_serde::to_vec(&f(&Some(input))?) {
+            Ok(input) => match rmp_serde::to_vec(&f(Some(input))?) {
                 Ok(v) => Ok(v),
                 Err(v) => Err(Box::new(v)),
             },
@@ -129,17 +130,8 @@ where
     }
 }
 
-pub fn kv_get(b: &str, k: &str) -> Result<Option<HashMap<String, String>>> {
-    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?[..])?;
-    deserialize(&res[..])
-}
 
-pub fn kv_get_raw(b: &str, k: &[u8]) -> Result<Option<HashMap<Vec<u8>, Vec<u8>>>> {
-    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?[..])?;
-    deserialize(&res[..])
-}
-
-pub fn kv_get_obj<T>(b: &str, k: &str) -> Result<Option<T>>
+pub fn kv_get<T>(b: &str, k: &str) -> Result<Option<T>>
 where
     T: DeserializeOwned,
 {
@@ -147,17 +139,7 @@ where
     deserialize(&res[..])
 }
 
-pub fn kv_set(b: &str, k: &str, v: HashMap<String, String>) -> Result<()> {
-    host_call("v1", "kv", "PATCH", &serialize(&(b, k, v))?[..])?;
-    Ok(())
-}
-
-pub fn kv_set_raw(b: &str, k: &[u8], v: HashMap<Vec<u8>, Vec<u8>>) -> Result<()> {
-    host_call("v1", "kv", "PATCH", &serialize(&(b, k, v))?[..])?;
-    Ok(())
-}
-
-pub fn kv_set_obj<T>(b: &str, k: &str, obj: T) -> Result<()>
+pub fn kv_set<T>(b: &str, k: &str, obj: T) -> Result<()>
 where
     T: Serialize,
 {
@@ -170,20 +152,12 @@ pub fn kv_delete(b: &str, k: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn kv_delete_raw(b: &str, k: &[u8]) -> Result<()> {
-    host_call("v1", "kv", "DELETE", &serialize(&(b, k))?[..])?;
-    Ok(())
-}
 
 pub fn kv_delete_keys(b: &str, k: &str, v: Vec<String>) -> Result<()> {
     host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?[..])?;
     Ok(())
 }
 
-pub fn kv_delete_keys_raw(b: &str, k: &[u8], v: &[&[u8]]) -> Result<()> {
-    host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?[..])?;
-    Ok(())
-}
 
 pub fn pubsub_subscribe(k: &str) -> Result<()> {
     let res = host_call("v1", "pubsub", "SUB", &serialize(k)?[..])?;
@@ -195,17 +169,7 @@ pub fn pubsub_unsubscribe(k: &str) -> Result<()> {
     deserialize(&res[..])
 }
 
-pub fn pubsub_publish(k: &str, event: &str, v: &str) -> Result<()> {
-    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
-    deserialize(&res[..])
-}
-
-pub fn pubsub_publish_raw(k: &str, event: &str, v: &[u8]) -> Result<()> {
-    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, v))?[..])?;
-    deserialize(&res[..])
-}
-
-pub fn pubsub_publish_obj<T>(k: &str, event: &str, v: T) -> Result<()>
+pub fn pubsub_publish<T>(k: &str, event: &str, v: T) -> Result<()>
 where
     T: Serialize,
 {
@@ -213,20 +177,27 @@ where
     deserialize(&res[..])
 }
 
-pub fn pubsub_publish_from(k: &str, event: &str, v: &str) -> Result<()> {
-    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
-    deserialize(&res[..])
-}
-
-pub fn pubsub_publish_from_raw(k: &str, event: &str, v: &[u8]) -> Result<()> {
-    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
-    deserialize(&res[..])
-}
-
-pub fn pubsub_publish_from_obj<T>(k: &str, event: &str, v: T) -> Result<()>
+pub fn pubsub_publish_from<T>(k: &str, event: &str, v: T) -> Result<()>
 where
     T: Serialize,
 {
     let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, v))?[..])?;
     deserialize(&res[..])
 }
+
+pub fn presence_track<T>(topic: &str, key: &str, v: T) -> Result<()>
+where
+    T: Serialize,
+{
+    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, v))?[..])?;
+    deserialize(&res[..])
+}
+
+pub fn presence_list<T>(topic: &str) -> Result<HashMap<String, Vec<T>>>
+where
+    T: DeserializeOwned
+{
+    let res = host_call("v1", "presence", "LIST", &serialize(&(topic,))?[..])?;
+    deserialize(&res[..])
+}
+
