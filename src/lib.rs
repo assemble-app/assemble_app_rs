@@ -137,14 +137,13 @@ where
 
 #[derive(Deserialize, Serialize, Clone, Copy)]
 pub struct ScanOpts {
-  offset: u32,
   limit: u32,
   reverse: bool
 }
 
 
 impl Default for ScanOpts {
-    fn default() -> ScanOpts { ScanOpts { offset: 0, limit: 100, reverse: false } }
+    fn default() -> ScanOpts { ScanOpts { limit: 100, reverse: false } }
 }
 
 
@@ -178,7 +177,7 @@ where
     deserialize(&res[..])
 }
 
-pub fn kv_scan<T>(b: &str, opts: &ScanOpts) -> Result<Vec<T>>
+pub fn kv_scan<T>(b: &str, opts: &ScanOpts) -> Result<Vec<(String, T)>>
 where
     T: DeserializeOwned,
 {
