@@ -135,15 +135,16 @@ where
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Copy)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct ScanOpts {
   limit: u32,
-  reverse: bool
+  reverse: bool,
+  start_key: Option<String>
 }
 
 
 impl Default for ScanOpts {
-    fn default() -> ScanOpts { ScanOpts { limit: 100, reverse: false } }
+    fn default() -> ScanOpts { ScanOpts { limit: 100, reverse: false, start_key: None } }
 }
 
 
@@ -158,7 +159,13 @@ impl ScanOpts {
         m.reverse = reverse;
         m
     }
+    pub fn start_key(&self, start_key: String) -> ScanOpts {
+        let mut m = self.clone();
+        m.start_key = Some(start_key);
+        m
+    }
 }
+
 pub fn utc_now() -> Result<DateTime<FixedOffset>>
 {
     let res = host_call("v1", "time", "UTC_NOW", &serialize(&())?)?;
