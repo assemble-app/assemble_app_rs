@@ -183,7 +183,8 @@ pub fn pubsub_publish<T>(k: &str, event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, &serialize(v)?[..]))?[..])?;
+    let s: serde_bytes::ByteBuf = serde_bytes::ByteBuf::from(serialize(v)?);
+    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, s))?)?;
     deserialize(&res[..])
 }
 
@@ -191,7 +192,8 @@ pub fn pubsub_publish_from<T>(k: &str, event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, &serialize(v)?[..]))?[..])?;
+    let s: serde_bytes::ByteBuf = serde_bytes::ByteBuf::from(serialize(v)?);
+    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, s))?)?;
     deserialize(&res[..])
 }
 
@@ -199,7 +201,8 @@ pub fn presence_track<T>(topic: &str, key: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, &serialize(v)?[..]))?[..])?;
+    let s: serde_bytes::ByteBuf = serde_bytes::ByteBuf::from(serialize(v)?);
+    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, s))?)?;
     deserialize(&res[..])
 }
 
@@ -208,6 +211,6 @@ where
     T: DeserializeOwned
 {
     let res = host_call("v1", "presence", "LIST", &serialize(&(topic,))?[..])?;
-    deserialize::<_, Vec<&[u8]>>(&res)?.into_iter().map(|x| { deserialize(&x[..]) }).collect()
+    deserialize::<_, Vec<serde_bytes::ByteBuf>>(&res)?.into_iter().map(|x| { deserialize(&x) }).collect()
 }
 
