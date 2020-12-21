@@ -149,12 +149,12 @@ impl Default for ScanOpts {
 
 
 impl ScanOpts {
-    fn limit(&self, limit: u32) -> ScanOpts {
+    pub fn limit(&self, limit: u32) -> ScanOpts {
         let mut m = self.clone();
         m.limit = limit;
         m
     }
-    fn reverse(&self, reverse: bool) -> ScanOpts {
+    pub fn reverse(&self, reverse: bool) -> ScanOpts {
         let mut m = self.clone();
         m.reverse = reverse;
         m
