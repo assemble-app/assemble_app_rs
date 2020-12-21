@@ -183,7 +183,7 @@ pub fn pubsub_publish<T>(k: &str, event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, serialize(v)?))?[..])?;
+    let res = host_call("v1", "pubsub", "PUB", &serialize(&(k, event, &serialize(v)?[..]))?[..])?;
     deserialize(&res[..])
 }
 
@@ -191,7 +191,7 @@ pub fn pubsub_publish_from<T>(k: &str, event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, serialize(v)?))?[..])?;
+    let res = host_call("v1", "pubsub", "PUB_FROM", &serialize(&(k, event, &serialize(v)?[..]))?[..])?;
     deserialize(&res[..])
 }
 
@@ -199,7 +199,7 @@ pub fn presence_track<T>(topic: &str, key: &str, v: &T) -> Result<()>
 where
     T: Serialize,
 {
-    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, serialize(v)?))?[..])?;
+    let res = host_call("v1", "presence", "TRACK", &serialize(&(topic, key, &serialize(v)?[..]))?[..])?;
     deserialize(&res[..])
 }
 
