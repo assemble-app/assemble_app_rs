@@ -1,6 +1,6 @@
 [package]
 name = "assemble_app"
-version = "0.1.10"
+version = "0.1.11"
 authors = ["Kyle <me@khanson.io>"]
 edition = "2018"
 description = "Bootstrap library for https://assemble.app"
@@ -9,7 +9,7 @@ license = "Apache-2.0"
 [dependencies]
 wapc-guest = "0.4.0"
 rmp-serde = "0.15.0"
-serde = "1.0.118"
+serde = { version = "1.0.118", features = ["derive"] }
 serde_derive = "1.0.118"
 serde_bytes = "0.11"
 chrono = "0.4.19"

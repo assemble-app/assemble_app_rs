@@ -135,10 +135,34 @@ where
     }
 }
 
+#[derive(Deserialize, Serialize, Clone, Copy)]
+pub struct ScanOpts {
+  offset: u32,
+  limit: u32,
+  reverse: bool
+}
 
+
+impl Default for ScanOpts {
+    fn default() -> ScanOpts { ScanOpts { offset: 0, limit: 100, reverse: false } }
+}
+
+
+impl ScanOpts {
+    fn limit(&self, limit: u32) -> ScanOpts {
+        let mut m = self.clone();
+        m.limit = limit;
+        m
+    }
+    fn reverse(&self, reverse: bool) -> ScanOpts {
+        let mut m = self.clone();
+        m.reverse = reverse;
+        m
+    }
+}
 pub fn utc_now() -> Result<DateTime<FixedOffset>>
 {
-    let res = host_call("v1", "time", "UTC_NOW", &serialize(&())?[..])?;
+    let res = host_call("v1", "time", "UTC_NOW", &serialize(&())?)?;
     let st: &str = deserialize(&res[..])?;
     match DateTime::parse_from_rfc3339(st) {
         Ok(v) => Ok(v),
@@ -146,12 +170,19 @@ pub fn utc_now() -> Result<DateTime<FixedOffset>>
     }
 }
 
-
 pub fn kv_get<T>(b: &str, k: &str) -> Result<Option<T>>
 where
     T: DeserializeOwned,
 {
-    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?[..])?;
+    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?)?;
+    deserialize(&res[..])
+}
+
+pub fn kv_scan<T>(b: &str, opts: &ScanOpts) -> Result<Vec<T>>
+where
+    T: DeserializeOwned,
+{
+    let res = host_call("v1", "kv", "SCAN", &serialize(&(b, opts))?)?;
     deserialize(&res[..])
 }
 
@@ -159,7 +190,7 @@ pub fn kv_set<T>(b: &str, k: &str, obj: &T) -> Result<()>
 where
     T: Serialize,
 {
-    host_call("v1", "kv", "SET", &serialize(&(b, k, obj))?[..])?;
+    host_call("v1", "kv", "SET", &serialize(&(b, k, obj))?)?;
     Ok(())
 }
 
@@ -167,29 +198,29 @@ pub fn kv_patch<T>(b: &str, k: &str, obj: &T) -> Result<()>
 where
     T: Serialize,
 {
-    host_call("v1", "kv", "PATCH", &serialize(&(b, k, obj))?[..])?;
+    host_call("v1", "kv", "PATCH", &serialize(&(b, k, obj))?)?;
     Ok(())
 }
 
 pub fn kv_delete(b: &str, k: &str) -> Result<()> {
-    host_call("v1", "kv", "DELETE", &serialize(&(b, k))?[..])?;
+    host_call("v1", "kv", "DELETE", &serialize(&(b, k))?)?;
     Ok(())
 }
 
 
 pub fn kv_delete_keys(b: &str, k: &str, v: Vec<String>) -> Result<()> {
-    host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?[..])?;
+    host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?)?;
     Ok(())
 }
 
 
 pub fn pubsub_subscribe(k: &str) -> Result<()> {
-    let res = host_call("v1", "pubsub", "SUB", &serialize(k)?[..])?;
+    let res = host_call("v1", "pubsub", "SUB", &serialize(k)?)?;
     deserialize(&res[..])
 }
 
 pub fn pubsub_unsubscribe(k: &str) -> Result<()> {
-    let res = host_call("v1", "pubsub", "UNSUB", &serialize(&(k,))?[..])?;
+    let res = host_call("v1", "pubsub", "UNSUB", &serialize(&(k,))?)?;
     deserialize(&res[..])
 }
 
