@@ -1,11 +1,14 @@
 #[macro_use]
 use serde;
+use chrono;
 use serde::de::DeserializeOwned;
 #[macro_use]
 pub use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 pub use wapc_guest::prelude;
 pub use wapc_guest::prelude::{console_log, host_call};
+pub use chrono::{DateTime, FixedOffset};
+
 
 #[macro_export]
 macro_rules! register_view {
@@ -129,6 +132,17 @@ where
             },
             Err(v) => Err(Box::new(v)),
         }
+    }
+}
+
+
+pub fn utc_now() -> Result<DateTime<FixedOffset>>
+{
+    let res = host_call("v1", "time", "UTC_NOW", &serialize(&())?[..])?;
+    let st: &str = deserialize(&res[..])?;
+    match DateTime::parse_from_rfc3339(st) {
+        Ok(v) => Ok(v),
+        Err(e) => Err(e.into())
     }
 }
 
