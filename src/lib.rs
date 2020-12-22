@@ -5,7 +5,7 @@ use serde::de::DeserializeOwned;
 pub use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 pub use wapc_guest::prelude;
-pub use wapc_guest::prelude::{console_log, host_call};
+pub use wapc_guest::prelude::{host_call};
 
 #[macro_export]
 macro_rules! register_view {
@@ -206,6 +206,11 @@ pub fn utc_now() -> Result<DateTime<FixedOffset>> {
         Ok(v) => Ok(v),
         Err(e) => Err(e.into()),
     }
+}
+
+pub fn console_log(s: &str) -> Result<()> {
+    let res = host_call("v1", "console", "LOG", &serialize(&(s,))?)?;
+    deserialize(&res)
 }
 
 pub fn current_user() -> Result<Option<User>> {
