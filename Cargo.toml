@@ -1,6 +1,6 @@
 [package]
 name = "assemble_app"
-version = "0.1.16"
+version = "0.1.17"
 authors = ["Kyle <me@khanson.io>"]
 edition = "2018"
 description = "Bootstrap library for https://assemble.app"

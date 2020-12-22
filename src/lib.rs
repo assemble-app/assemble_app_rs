@@ -95,7 +95,7 @@ macro_rules! assemble_init {
 
 pub fn hook(info: &std::panic::PanicInfo) {
     let msg = info.to_string();
-    wapc_guest::prelude::console_log(&msg[..]);
+    crate::console_log(&msg[..]);
 }
 
 pub type Html = String;
