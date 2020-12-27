@@ -80,7 +80,8 @@ macro_rules! register_root_view {
         crate::prelude::register_function(&"view-presence-event", |b: &[u8]| {
             let (state, topic, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
             let mut s: $t = crate::deserialize(state)?;
-            s.presence_event(topic, s)?;
+            let mut d = crate::deserialize(payload)?;
+            s.presence_event(topic, d)?;
             serialize(&s)
         });
         crate::prelude::register_function(&"view-render-", |b: &[u8]| {
