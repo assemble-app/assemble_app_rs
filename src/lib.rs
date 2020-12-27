@@ -246,16 +246,25 @@ pub fn console_log(s: &str) -> Result<()> {
     deserialize(&res)
 }
 
+pub fn random_string(length: u16) -> Result<String> {
+    let res = host_call("v1", "rand", "STRING", &serialize(&())?)?;
+    deserialize(&res)
+}
+
 pub fn current_user() -> Result<Option<User>> {
     let res = host_call("v1", "user", "USER", &serialize(&())?)?;
     deserialize(&res)
 }
 
-pub fn kv_get<T>(b: &str, k: &str) -> Result<Option<T>>
-where
-    T: DeserializeOwned,
+pub fn counter_get(b: &str, k: &str) -> Result<i64>
 {
-    let res = host_call("v1", "kv", "GET", &serialize(&(b, k))?)?;
+    let res = host_call("v1", "counter", "GET", &serialize(&(b, k))?)?;
+    deserialize(&res)
+}
+
+pub fn counter_increment<T>(b: &str, k: &str, v: i64) -> Result<()>
+{
+    let res = host_call("v1", "counter", "INC", &serialize(&(b, k, v))?)?;
     deserialize(&res)
 }
 
