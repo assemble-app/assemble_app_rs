@@ -248,7 +248,7 @@ pub fn console_log(s: &str) -> Result<()> {
 }
 
 pub fn random_string(length: u16) -> Result<String> {
-    let res = host_call("v1", "rand", "STRING", &serialize(&())?)?;
+    let res = host_call("v1", "rand", "STRING", &serialize(&(length,))?)?;
     deserialize(&res)
 }
 
