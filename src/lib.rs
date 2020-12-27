@@ -180,27 +180,27 @@ where
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct User {
-    id: String,
-    username: String,
+    pub id: String,
+    pub username: String,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ScanOpts {
-    limit: u32,
-    reverse: bool,
-    start_key: Option<String>,
+    pub limit: u32,
+    pub reverse: bool,
+    pub start_key: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct PresenceDiffRaw {
-    joins: HashMap<String, Vec<Vec<u8>>>,
-    leaves: HashMap<String, Vec<Vec<u8>>>,
+    pub joins: HashMap<String, Vec<Vec<u8>>>,
+    pub leaves: HashMap<String, Vec<Vec<u8>>>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct PresenceDiff<T> {
-    joins: HashMap<String, Vec<T>>,
-    leaves: HashMap<String, Vec<T>>,
+    pub joins: HashMap<String, Vec<T>>,
+    pub leaves: HashMap<String, Vec<T>>,
 }
 
 
