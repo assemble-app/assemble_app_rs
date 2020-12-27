@@ -71,13 +71,13 @@ macro_rules! register_root_view {
             s.local_event(name, payload)?;
             serialize(&s)
         });
-        crate::prelude::register_function(&"view-pubsub-event", |b: &[u8]| {
+        crate::prelude::register_function(&"view-pubsub-event-", |b: &[u8]| {
             let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) = crate::deserialize(b)?;
             let mut s: $t = crate::deserialize(state)?;
             s.pubsub_event(topic, name, payload)?;
             serialize(&s)
         });
-        crate::prelude::register_function(&"view-presence-event", |b: &[u8]| {
+        crate::prelude::register_function(&"view-presence-event-", |b: &[u8]| {
             let (state, topic, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
             let mut s: $t = crate::deserialize(state)?;
             let mut d = crate::deserialize(payload)?;
