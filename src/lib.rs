@@ -19,11 +19,11 @@ macro_rules! register_view {
             },
         );
         crate::prelude::register_function(
-            &["view-event-", stringify!($n)].join("")[..],
+            &["view-dom-event-", stringify!($n)].join("")[..],
             |b: &[u8]| {
                 let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
-                s.event(name, payload)?;
+                s.dom_event(name, payload)?;
                 serialize(&s)
             },
         );
@@ -55,16 +55,16 @@ macro_rules! register_root_view {
             let s = $t::start(params)?;
             serialize(&s)
         });
-        crate::prelude::register_function(&"view-event-", |b: &[u8]| {
+        crate::prelude::register_function(&"view-dom-event-", |b: &[u8]| {
             let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
             let mut s: $t = crate::deserialize(state)?;
-            s.event(name, payload)?;
+            s.local_event(name, payload)?;
             serialize(&s)
         });
-        crate::prelude::register_function(&"view-msg-", |b: &[u8]| {
+        crate::prelude::register_function(&"view-env-event", |b: &[u8]| {
             let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) = crate::deserialize(b)?;
             let mut s: $t = crate::deserialize(state)?;
-            s.message(topic, name, payload)?;
+            s.pubsub_event(topic, name, payload)?;
             serialize(&s)
         });
         crate::prelude::register_function(&"view-render-", |b: &[u8]| {
@@ -105,10 +105,10 @@ pub trait View: Sync + Send {
     fn start(params: HashMap<String, String>) -> Result<Self>
     where
         Self: Sized;
-    fn event(&mut self, msg: &str, body: &[u8]) -> Result<()> {
+    fn local_event(&mut self, msg: &str, body: &[u8]) -> Result<()> {
         Ok(())
     }
-    fn message(&mut self, topic: &str, msg: &str, body: &[u8]) -> Result<()> {
+    fn pubsub_event(&mut self, topic: &str, msg: &str, body: &[u8]) -> Result<()> {
         Ok(())
     }
     fn render(&self) -> Result<Html>;
@@ -162,6 +162,7 @@ where
 #[derive(Deserialize, Serialize, Clone)]
 pub struct User {
     id: String,
+    username: String,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -255,8 +256,8 @@ pub fn kv_delete(b: &str, k: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn kv_delete_keys(b: &str, k: &str, v: Vec<String>) -> Result<()> {
-    host_call("v1", "kv", "DEL_KEYS", &serialize(&(b, k, v))?)?;
+pub fn kv_patch_delete_fields(b: &str, k: &str, v: Vec<String>) -> Result<()> {
+    host_call("v1", "kv", "PATCH_DEL", &serialize(&(b, k, v))?)?;
     Ok(())
 }
 
