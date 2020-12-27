@@ -19,7 +19,7 @@ macro_rules! register_view {
             },
         );
         crate::prelude::register_function(
-            &["view-dom-event-", stringify!($n)].join("")[..],
+            &["view-local-event-", stringify!($n)].join("")[..],
             |b: &[u8]| {
                 let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
@@ -28,7 +28,7 @@ macro_rules! register_view {
             },
         );
         crate::prelude::register_function(
-            &["view-msg-", stringify!($n)].join("")[..],
+            &["view-pubsub-event-", stringify!($n)].join("")[..],
             |b: &[u8]| {
                 let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) =
                     crate::deserialize(b)?;
@@ -307,4 +307,20 @@ where
         .into_iter()
         .map(|x| deserialize(&x))
         .collect()
+}
+
+pub fn local_send<T>(event: &str, v: &T) -> Result<()>
+where
+    T: Serialize,
+{
+    local_send_timeout(event, v, 0)
+}
+
+pub fn local_send_timeout<T>(event: &str, v: &T, timeout_ms: u32) -> Result<()>
+where
+    T: Serialize,
+{
+    let s: serde_bytes::ByteBuf = serde_bytes::ByteBuf::from(serialize(v)?);
+    let res = host_call("v1", "local", "SEND", &serialize(&(event, s, timeout_ms))?)?;
+    deserialize(&res)
 }
