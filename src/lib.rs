@@ -23,7 +23,7 @@ macro_rules! register_view {
             |b: &[u8]| {
                 let (state, name, payload): (&[u8], &str, &[u8]) = crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
-                s.dom_event(name, payload)?;
+                s.local_event(name, payload)?;
                 serialize(&s)
             },
         );
@@ -33,7 +33,17 @@ macro_rules! register_view {
                 let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) =
                     crate::deserialize(b)?;
                 let mut s: $t = crate::deserialize(state)?;
-                s.message(topic, name, payload)?;
+                s.pubsub_event(topic, name, payload)?;
+                serialize(&s)
+            },
+        );
+        crate::prelude::register_function(
+            &["view-presence-event-", stringify!($n)].join("")[..],
+            |b: &[u8]| {
+                let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) =
+                    crate::deserialize(b)?;
+                let mut s: $t = crate::deserialize(state)?;
+                s.presence_event(topic, name, payload)?;
                 serialize(&s)
             },
         );
@@ -65,6 +75,12 @@ macro_rules! register_root_view {
             let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) = crate::deserialize(b)?;
             let mut s: $t = crate::deserialize(state)?;
             s.pubsub_event(topic, name, payload)?;
+            serialize(&s)
+        });
+        crate::prelude::register_function(&"view-presence-event", |b: &[u8]| {
+            let (state, topic, name, payload): (&[u8], &str, &str, &[u8]) = crate::deserialize(b)?;
+            let mut s: $t = crate::deserialize(state)?;
+            s.presence_event(topic, name, payload)?;
             serialize(&s)
         });
         crate::prelude::register_function(&"view-render-", |b: &[u8]| {
@@ -105,10 +121,13 @@ pub trait View: Sync + Send {
     fn start(params: HashMap<String, String>) -> Result<Self>
     where
         Self: Sized;
-    fn local_event(&mut self, msg: &str, body: &[u8]) -> Result<()> {
+    fn local_event(&mut self, _msg: &str, _body: &[u8]) -> Result<()> {
         Ok(())
     }
-    fn pubsub_event(&mut self, topic: &str, msg: &str, body: &[u8]) -> Result<()> {
+    fn pubsub_event(&mut self, _topic: &str, _msg: &str, _body: &[u8]) -> Result<()> {
+        Ok(())
+    }
+    fn presence_event(&mut self, _topic: &str, _diff: &PresenceDiffRaw) -> Result<()> {
         Ok(())
     }
     fn render(&self) -> Result<Html>;
@@ -171,6 +190,19 @@ pub struct ScanOpts {
     reverse: bool,
     start_key: Option<String>,
 }
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct PresenceDiffRaw {
+    joins: HashMap<String, Vec<Vec<u8>>>,
+    leaves: HashMap<String, Vec<Vec<u8>>>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct PresenceDiff<T> {
+    joins: HashMap<String, Vec<T>>,
+    leaves: HashMap<String, Vec<T>>,
+}
+
 
 impl Default for ScanOpts {
     fn default() -> ScanOpts {
@@ -303,10 +335,30 @@ where
     T: DeserializeOwned,
 {
     let res = host_call("v1", "presence", "LIST", &serialize(&(topic,))?[..])?;
-    deserialize::<_, Vec<serde_bytes::ByteBuf>>(&res)?
+    
+    let map = deserialize::<_, HashMap<String, Vec<serde_bytes::ByteBuf>>>(&res)?
         .into_iter()
-        .map(|x| deserialize(&x))
-        .collect()
+        .map(|(k, x)| (k, x.into_iter().flat_map(|e| deserialize(&e)).collect()))
+        .collect();
+
+    Ok(map)
+}
+pub fn presence_deserialize_diff<T>(diff: PresenceDiffRaw) -> Result<PresenceDiff<T>>
+where
+    T: DeserializeOwned,
+{
+    let joins =
+        diff.joins
+        .into_iter()
+        .map(|(k, x)| (k, x.into_iter().flat_map(|e| deserialize(&e)).collect()))
+        .collect();
+    let leaves =
+        diff.leaves
+        .into_iter()
+        .map(|(k, x)| (k, x.into_iter().flat_map(|e| deserialize(&e)).collect()))
+        .collect();
+
+    Ok(PresenceDiff{joins: joins, leaves: leaves})
 }
 
 pub fn local_send<T>(event: &str, v: &T) -> Result<()>
@@ -324,3 +376,4 @@ where
     let res = host_call("v1", "local", "SEND", &serialize(&(event, s, timeout_ms))?)?;
     deserialize(&res)
 }
+
