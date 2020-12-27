@@ -13,8 +13,8 @@ macro_rules! register_view {
         crate::prelude::register_function(
             &["view-start-", stringify!($n)].join("")[..],
             |b: &[u8]| {
-                let params = crate::deserialize(b)?;
-                let s = $t::start(params)?;
+                let (is_connected, params) = crate::deserialize(b)?;
+                let s = $t::start(is_connected, params)?;
                 serialize(&s)
             },
         );
@@ -61,8 +61,8 @@ macro_rules! register_view {
 macro_rules! register_root_view {
     ($t:ident) => {{
         crate::prelude::register_function(&"view-start-", |b: &[u8]| {
-            let params = crate::deserialize(b)?;
-            let s = $t::start(params)?;
+            let (is_connected, params) = crate::deserialize(b)?;
+            let s = $t::start(is_connected, params)?;
             serialize(&s)
         });
         crate::prelude::register_function(&"view-local-event-", |b: &[u8]| {
@@ -119,7 +119,7 @@ pub type Html = String;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Sync + Send>>;
 
 pub trait View: Sync + Send {
-    fn start(params: HashMap<String, String>) -> Result<Self>
+    fn start(is_connected: bool, params: HashMap<String, String>) -> Result<Self>
     where
         Self: Sized;
     fn local_event(&mut self, _msg: &str, _body: &[u8]) -> Result<()> {
