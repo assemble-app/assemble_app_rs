@@ -193,8 +193,8 @@ pub struct ScanOpts {
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct PresenceDiffRaw {
-    pub joins: HashMap<String, Vec<Vec<u8>>>,
-    pub leaves: HashMap<String, Vec<Vec<u8>>>,
+    pub joins: HashMap<String, Vec<serde_bytes::ByteBuf>>,
+    pub leaves: HashMap<String, Vec<serde_bytes::ByteBuf>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -369,7 +369,15 @@ where
 
     Ok(PresenceDiff{joins: joins, leaves: leaves})
 }
+pub fn presence_subscribe(k: &str) -> Result<()> {
+    let res = host_call("v1", "presence", "SUB", &serialize(&(k,))?)?;
+    deserialize(&res)
+}
 
+pub fn presence_unsubscribe(k: &str) -> Result<()> {
+    let res = host_call("v1", "presence", "UNSUB", &serialize(&(k,))?)?;
+    deserialize(&res)
+}
 pub fn local_send<T>(event: &str, v: &T) -> Result<()>
 where
     T: Serialize,
